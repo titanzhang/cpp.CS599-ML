@@ -52,14 +52,23 @@ def label_audio_files(dir_name, label, file_ext='*.wav'):
       features = np.vstack([features, ext_features])
       labels = np.hstack([labels, label])
 
-  return np.array(features), np.array(labels)
+  # header
+  header = ["mfcc" for n in mfccs[0]]
+  header += ["chroma_stft" for n in chroma[0]]
+  header += ["melspectrogram" for n in mel[0]]
+  header += ["spectral_contrast" for n in contrast[0]]
+  header += ["tonnetz" for n in tonnetz[0]]
 
-def write_features(features, labels, dir_name, file_name='features.csv'):
+  return np.array(features), np.array(labels), np.array(header)
+
+def write_features(features, labels, dir_name, head=None, file_name='features.csv'):
   fn = os.path.join(dir_name, file_name)
   with open(fn, 'w') as csvfile:
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    if not head is None:
+      writer.writerow(np.hstack((["category"],head)));
     for i in range(features.shape[0]):
-      writer.writerow(np.hstack([features[i], labels[i]]))
+      writer.writerow(np.hstack((labels[i], features[i])))
   print("Features saved in %s" % fn)
 
 def load_features(dir_name, file_name='features.csv'):
@@ -67,9 +76,9 @@ def load_features(dir_name, file_name='features.csv'):
   with open(os.path.join(dir_name, file_name), newline='') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in reader:
-      features.append(row[:-1])
-      labels.append(row[-1])
-  return np.array(features, dtype=np.float64), np.array(labels)
+      features.append(row[0])
+      labels.append(row[1:])
+  return np.array(features[1:], dtype=np.float64), np.array(labels[1:])
 
 def save_label(label_list, dir_name, file_name='labels.csv'):
   with open(os.path.join(dir_name, file_name), 'w') as csvfile:
@@ -106,6 +115,6 @@ if __name__ == "__main__":
   dir_name = sys.argv[1]
   label = sys.argv[2]
 
-  features,labels = label_audio_files(dir_name, label)
-  write_features(features, labels, dir_name)
+  features,labels, header = label_audio_files(dir_name, label)
+  write_features(features, labels, dir_name, header)
 
