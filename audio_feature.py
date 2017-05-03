@@ -61,14 +61,20 @@ def label_audio_files(dir_name, label, file_ext='*.wav'):
 
   return np.array(features), np.array(labels), np.array(header)
 
-def write_features(features, labels, dir_name, head=None, file_name='features.csv'):
+def write_header(header, dir_name, file_name='header.csv'):
   fn = os.path.join(dir_name, file_name)
   with open(fn, 'w') as csvfile:
     writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-    if not head is None:
-      writer.writerow(np.hstack((["category"],head)));
+    writer.writerow(header)
+  print("Header saved in %s" % fn)
+
+
+def write_features(features, labels, dir_name, file_name='features.csv'):
+  fn = os.path.join(dir_name, file_name)
+  with open(fn, 'w') as csvfile:
+    writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
     for i in range(features.shape[0]):
-      writer.writerow(np.hstack((labels[i], features[i])))
+      writer.writerow(np.hstack((features[i], labels[i])))
   print("Features saved in %s" % fn)
 
 def load_features(dir_name, file_name='features.csv'):
@@ -76,9 +82,9 @@ def load_features(dir_name, file_name='features.csv'):
   with open(os.path.join(dir_name, file_name), newline='') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     for row in reader:
-      features.append(row[0])
-      labels.append(row[1:])
-  return np.array(features[1:], dtype=np.float64), np.array(labels[1:])
+      features.append(row[:-1])
+      labels.append(row[-1])
+  return np.array(features, dtype=np.float64), np.array(labels)
 
 def save_label(label_list, dir_name, file_name='labels.csv'):
   with open(os.path.join(dir_name, file_name), 'w') as csvfile:
@@ -116,5 +122,6 @@ if __name__ == "__main__":
   label = sys.argv[2]
 
   features,labels, header = label_audio_files(dir_name, label)
-  write_features(features, labels, dir_name, header)
+  write_features(features, labels, dir_name)
+  write_header(header, dir_name)
 
